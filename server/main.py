@@ -1,6 +1,7 @@
 import socket
 import json
 import os
+import signal
 import time
 
 class Player:
@@ -8,10 +9,12 @@ class Player:
     def __init__(self, player_socket):
         self.player_socket = player_socket
 
+
 class Room:
 
     def __init__(self):
         self.players = []
+        self.pid = 0
 
     def get_num_players(self):
         return len(self.players)
@@ -19,28 +22,57 @@ class Room:
     def add_player(self, player):
         self.players.append(player)
 
+    def set_pid(self, pid):
+        self.pid = pid
+
+    def kill_room(self):
+        print(self.pid)
+        os.kill(self.pid, signal.SIGKILL)
+
 
 def put_new_connection_in_room(rooms, new_socket):
+    # Make new player
+    player = Player(new_socket)
+
     # Add player to a room with space
     for room in rooms:
         if room.get_num_players() < 2:
-            room.add_player(new_socket)
+            room.add_player(player)
             return
     
     # Make new room
     new_room = make_new_room()
-    new_room.add_player(new_socket)
+    new_room.add_player(player)
     rooms.append(new_room)
     return
 
         
 def make_new_room():
     new_room = Room()
+
+    # Make new process for the room
     newpid = os.fork()
     if newpid == 0:
         # Move room process to game loop
-        os._exit(0)
+        while True:
+            time.sleep(1)
+    new_room.set_pid(newpid)
     return new_room
+
+def reap_children(signum, frame):
+    while True:
+        try:
+            pid, status = os.waitpid(-1, os.WNOHANG)
+            if pid == 0:
+                break
+        except OSError:
+            break
+
+def clean_up_rooms(rooms):
+    for i, room in enumerate(rooms):
+        if room.get_num_players() == 0:
+            room.kill_room()            # Kills room process
+            rooms.pop(i)
 
 def print_rooms_status(rooms):
     print("%d Rooms" %len(rooms))
@@ -56,9 +88,16 @@ if __name__ == "__main__":
 
     rooms = []
 
+    # Removes zombie processes
+    signal.signal(signal.SIGCHLD, reap_children)
+
     while True:
         print_rooms_status(rooms)
         connection, address = server_socket.accept()
+
+        # Removes empty rooms
+        if len(rooms) > 5:
+            clean_up_rooms(rooms)
 
         # Add new player to a room
         put_new_connection_in_room(rooms, connection)
