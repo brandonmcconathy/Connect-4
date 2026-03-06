@@ -1,15 +1,13 @@
 import socket
-import json
 import os
 import signal
-import time
 
 from game import Game
 
 class Player:
 
-    def __init__(self, player_socket):
-        self.player_socket = player_socket
+    def __init__(self, socket):
+        self.socket = socket
 
 
 class Room:
@@ -45,7 +43,7 @@ def put_new_connection_in_room(rooms, new_socket):
             if newpid == 0:
                 # Move process to game loop
                 new_game = Game(room)
-                new_game.start_game
+                new_game.start_game()
                 os._exit(0)
             room.set_pid(newpid)
             return
@@ -83,7 +81,7 @@ def print_rooms_status(rooms):
     print()
 
 if __name__ == "__main__":
-    port = 50000       # Random port
+    port = 40000       # Random port
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(('', port))
     server_socket.listen(5)
