@@ -8,6 +8,7 @@ class Player:
 
     def __init__(self, socket):
         self.socket = socket
+        self.symbol = ''
 
 
 class Room:
@@ -81,7 +82,7 @@ def print_rooms_status(rooms):
     print()
 
 if __name__ == "__main__":
-    port = 40000       # Random port
+    port = 50002       # Random port
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(('', port))
     server_socket.listen(5)

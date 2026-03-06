@@ -1,13 +1,16 @@
 import socket
 import json
 
+from game import Game
+
 class Client:
 
     def __init__(self):
         self.server_host = "localhost"
-        self.server_port = 40000
+        self.server_port = 50002
         self.socket = None
         self.player_num = None
+        self.game = Game()
 
     def connect_to_server(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -18,7 +21,35 @@ class Client:
         json_data = json.loads(data.decode())
         self.player_num = json_data["player_num"]
 
+    def take_turn(self):
+        turn_bytes = self.socket.recv(1024)
+        turn_data = json.loads(turn_bytes.decode())
+        self.game.board = turn_data["board"]
+        if turn_data["is_active"]:
+            # Make move
+            column = int(input("Enter a column number from 1-7: ")) - 1
+            column_data = json.dumps({"column": column}).encode()
+            self.socket.send(column_data)
+
+        # Wait for updated board
+        other_player_move_bytes = self.socket.recv(1024)
+        other_player_turn_data = json.loads(other_player_move_bytes.decode())
+        self.game.board = other_player_turn_data["board"]
+        self.print_board()
+
+
+    def print_board(self):
+        print("---------------")
+        for row in self.game.board:
+            print('|', end="")
+            for col in row:
+                print(col, end="|")
+            
+            print("\n---------------")
+
 if __name__ == "__main__":
     client = Client()
     client.connect_to_server()
     client.get_player_num()
+    client.print_board()
+    client.take_turn()
