@@ -21,13 +21,27 @@ class Client:
         json_data = json.loads(data.decode())
         self.player_num = json_data["player_num"]
 
+    def validate_column(self, column):
+        if not column.isdigit():
+            return False
+        column = int(column)
+        if column < 1 or column > 7:
+            return False
+        return True
+
     def take_turn(self):
         turn_bytes = self.socket.recv(1024)
         turn_data = json.loads(turn_bytes.decode())
         self.game.board = turn_data["board"]
         if turn_data["is_active"]:
             # Make move
-            column = int(input("Enter a column number from 1-7: ")) - 1
+            column = input("Enter a column number from 1-7: ")
+
+            # Validate input
+            while not self.validate_column(column):
+                print("Invalid Input")
+                column = input("Enter a column number from 1-7: ")
+            column = int(column) - 1                    # -1 because board is 0-indexed
             column_data = json.dumps({"column": column}).encode()
             self.socket.send(column_data)
 
@@ -52,4 +66,5 @@ if __name__ == "__main__":
     client.connect_to_server()
     client.get_player_num()
     client.print_board()
-    client.take_turn()
+    while True:
+        client.take_turn()

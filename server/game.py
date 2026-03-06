@@ -24,6 +24,10 @@ class Game:
                 row_to_update = i
         self.board[row_to_update][column] = self.active_player.symbol
 
+    def update_active_player(self):
+        temp = self.active_player
+        self.active_player = self.non_active_player
+        self.non_active_player = temp
 
     def assign_players(self):
         # Randomly assign players a player number
@@ -65,9 +69,12 @@ class Game:
         # Send updated board to players
         board_data = json.dumps({"board": self.board}).encode()
         self.non_active_player.socket.send(board_data)
-        self.active_player.socket.send(board_data)        
+        self.active_player.socket.send(board_data)
+
+        self.update_active_player()
 
     def start_game(self):
         self.assign_players()
-        self.take_turn()
+        while True:
+            self.take_turn()
 
