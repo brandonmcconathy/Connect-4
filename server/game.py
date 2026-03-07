@@ -27,10 +27,89 @@ class Game:
         self.last_move = (row_to_update, column)
 
     def check_win(self):
-
         row = self.last_move[0]
         col = self.last_move[1]
+        last_symbol = self.active_player.symbol
+
+        # Check horizontal
+        left_bound = max(0, col - 3)
+        for i in range(left_bound, col + 1):
+            win = True
+            for j in range(4):
+                if j + i < 7:
+                    if self.board[row][j + i] != last_symbol:
+                        win = False
+                else:
+                    # Index out of range
+                    win = False
+            if win:
+                print("Room Process: Horiontal win - %s" %last_symbol)
+                return True
+
+        # Check Vertical
+        top_bound = max(0, row - 3)
+        for i in range(top_bound, row + 1):
+            win = True
+            for j in range(4):
+                if j + i < 6:
+                    if self.board[j + i][col] != last_symbol:
+                        win = False
+                else:
+                    # Index out of range
+                    win = False
+            if win:
+                print("Room Process: Vertical win - %s" %last_symbol)
+                return True
+
+        # Check Positive Diagonal
+        min_row = row
+        min_col = col
+        for i in range(3):
+            if min_row != 5 and min_col != 0:
+                min_row += 1
+                min_col -= 1
+
+        col_i = min_col
+        for row_i in range(min_row, row, -1):
+            win = True
+            for i in range(4):
+                if row_i - i >= 0 and col_i + i < 7:
+                    if self.board[row_i - i][col_i + i] != last_symbol:
+                        win = False
+                else:
+                    # Index out of range
+                    win = False
+            if win:
+                print("Room Process: Postive Diagonal win - %s" %last_symbol)
+                return True
+            col_i += 1
+
+        # Check Negative Diagonal
+        min_row = row
+        min_col = col
+        for i in range(3):
+            if min_row != 0 and min_col != 0:
+                min_row -= 1
+                min_col -= 1
+
+        col_i = min_col
+        for row_i in range(min_row, row):
+            win = True
+            for i in range(4):
+                if row_i + i < 6 and col_i + i < 7:
+                    if self.board[row_i + i][col_i + i] != last_symbol:
+                        win = False
+                else:
+                    # Index out of range
+                    win = False
+            if win:
+                print("Room Process: Negative Diagonal win - %s" %last_symbol)
+                return True
+            col_i += 1
+
+        # Did not detect win
         return False
+        
 
 
 
