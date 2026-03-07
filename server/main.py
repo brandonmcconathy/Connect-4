@@ -34,6 +34,7 @@ class Server:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind(('', self.port))
         self.socket.listen(5)
+        print("Server Started. Listening for connections on port %d." %self.port)
 
         # Sets up signal to remove zombie processes
         signal.signal(signal.SIGCHLD, self.reap_children)

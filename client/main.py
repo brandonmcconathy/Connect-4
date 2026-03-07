@@ -30,6 +30,11 @@ class Client:
         column = int(column)
         if column < 1 or column > 7:
             return False
+        
+        # Checks if column is already full
+        if self.game.board[0][column - 1] != ' ':
+            return False
+        
         return True
 
     def take_turn(self):
