@@ -11,10 +11,15 @@ class Client:
 
     def __init__(self):
         self.server_host = "localhost"
-        self.server_port = 50005
+        self.server_port = 50000
         self.socket = None
         self.player_num = None
         self.game = Game()
+        self.game_over = False
+        self.won = None
+
+    def get_game_over(self):
+        return self.game_over
 
     def connect_to_server(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -22,7 +27,7 @@ class Client:
 
     def get_player_num(self):
         print("Connected to server. Waiting for another player to join...")
-        data = self.socket.recv(1024)
+        data = self.socket.recv(4096)
         json_data = json.loads(data.decode())
         self.player_num = json_data["player_num"]
         print("You are player %d" %self.player_num)
@@ -42,7 +47,7 @@ class Client:
         return True
 
     def take_turn(self):
-        turn_bytes = self.socket.recv(1024)
+        turn_bytes = self.socket.recv(4096)
         if not turn_bytes:
             raise ConnectionError
         turn_data = json.loads(turn_bytes.decode())
@@ -64,12 +69,16 @@ class Client:
             print("Please wait for the other player to make their move.")
 
         # Wait for updated board
-        board_bytes = self.socket.recv(2048)
+        board_bytes = self.socket.recv(4096)
         if not board_bytes:
             raise ConnectionError
         board_data = json.loads(board_bytes.decode())
         self.game.board = board_data["board"]
         self.print_board()
+
+        if board_data["game_over"]:
+            self.game_over = True
+            self.won = True if board_data["won"] else False
 
 
     def print_board(self):
@@ -80,6 +89,13 @@ class Client:
                 print(col, end="|")
             
             print("\n---------------")
+
+    def end_game(self):
+        if self.won:
+            print("Congratulations! You won!")
+        else:
+            print("You lose. Better luck next time.")
+        self.handle_disconnection()
 
     def handle_disconnection(self):
         self.socket.close()
@@ -96,3 +112,7 @@ if __name__ == "__main__":
         except ConnectionError:
             client.handle_disconnection()
             break
+        if client.get_game_over():
+            client.end_game()
+            break
+        

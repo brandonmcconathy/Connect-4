@@ -26,7 +26,7 @@ class Room:
 class Server:
 
     def __init__(self):
-        self.port = 50005       # Random port
+        self.port = 50000       # Random port
         self.socket = None
         self.curr_room = Room()
 

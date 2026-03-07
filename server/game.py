@@ -16,6 +16,7 @@ class Game:
         self.active_player = None
         self.non_active_player = None
         self.last_move = None
+        self.game_over = False
         self.board = [[' ',' ',' ',' ',' ',' ',' '],
                       [' ',' ',' ',' ',' ',' ',' '],
                       [' ',' ',' ',' ',' ',' ',' '],
@@ -50,7 +51,8 @@ class Game:
                     win = False
             if win:
                 print("Room Process: Horiontal win - %s" %last_symbol)
-                return True
+                self.game_over = True
+                return
 
         # Check Vertical
         top_bound = max(0, row - 3)
@@ -65,7 +67,8 @@ class Game:
                     win = False
             if win:
                 print("Room Process: Vertical win - %s" %last_symbol)
-                return True
+                self.game_over = True
+                return
 
         # Check Positive Diagonal
         min_row = row
@@ -87,7 +90,8 @@ class Game:
                     win = False
             if win:
                 print("Room Process: Postive Diagonal win - %s" %last_symbol)
-                return True
+                self.game_over = True
+                return
             col_i += 1
 
         # Check Negative Diagonal
@@ -110,11 +114,12 @@ class Game:
                     win = False
             if win:
                 print("Room Process: Negative Diagonal win - %s" %last_symbol)
-                return True
+                self.game_over = True
+                return
             col_i += 1
 
         # Did not detect win
-        return False
+        self.game_over = False
 
     def update_active_player(self):
         temp = self.active_player
@@ -154,7 +159,7 @@ class Game:
             raise ConnectionError
 
         # Wait for acitve player to take turn
-        turn_bytes = self.active_player.socket.recv(2048)
+        turn_bytes = self.active_player.socket.recv(4096)
         if not turn_bytes:
             # Connection closed
             raise ConnectionError
@@ -165,10 +170,14 @@ class Game:
         # Update board
         self.update_board(column)
 
+        # Check for win
+        self.check_win()
+
         # Send updated board to players
-        board_data = json.dumps({"board": self.board}).encode()
-        self.non_active_player.socket.send(board_data)
-        self.active_player.socket.send(board_data)
+        active_board_data = json.dumps({"board": self.board, "game_over": self.game_over, "won": True}).encode()
+        non_active_board_data = json.dumps({"board": self.board, "game_over": self.game_over, "won": False}).encode()
+        self.non_active_player.socket.send(non_active_board_data)
+        self.active_player.socket.send(active_board_data)
     
     def close_connections(self):
         print("Room Process: A client disconnected. Closing connection")
@@ -195,7 +204,7 @@ class Game:
             except ConnectionError:
                 self.close_connections()    # Process exits in here
 
-            if self.check_win():
-                break
+            if self.game_over:
+                self.close_connections()
             self.update_active_player()
 
