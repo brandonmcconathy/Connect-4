@@ -1,5 +1,7 @@
 import json
 import os
+import random
+from abc import abstractmethod
 
 class ConnectionError(Exception):
     """Raised when client gets disconnected from the server"""
@@ -8,7 +10,6 @@ class ConnectionError(Exception):
 class Game:
 
     def __init__(self):
-        self.socket = None
         self.player_num = None
         self.game_over = False
         self.won = None
@@ -19,14 +20,8 @@ class Game:
                       [' ',' ',' ',' ',' ',' ',' '],
                       [' ',' ',' ',' ',' ',' ',' ']]
         
-    def set_socket(self, socket):
-        self.socket = socket
-        
     def get_player_num(self):
-        print("Connected to server. Waiting for another player to join...")
-        data = self.socket.recv(4096)
-        json_data = json.loads(data.decode())
-        self.player_num = json_data["player_num"]
+        self.player_num = random.randint(1, 2)
         print("You are player %d" %self.player_num)
         print("You will have the symbol %s" %('X' if self.player_num == 1 else 'O'))
 
@@ -43,6 +38,46 @@ class Game:
         
         return True
     
+    @abstractmethod
+    def take_turn(self):
+        pass
+
+    def print_board(self):
+        os.system("cls" if os.name == "nt" else "clear")
+        print("---------------")
+        for row in self.board:
+            print('|', end="")
+            for col in row:
+                print(col, end="|")
+            
+            print("\n---------------")
+
+    def end_game(self):
+        if self.won:
+            print("Congratulations! You won!")
+        else:
+            print("You lose. Better luck next time.")
+
+    @abstractmethod
+    def play_game(self):
+        pass
+            
+class OnlineGame(Game):
+
+    def __init__(self):
+        super().__init__()
+        self.socket = None
+
+    def set_socket(self, socket):
+        self.socket = socket
+
+    def get_player_num(self):
+        data = self.socket.recv(4096)
+        json_data = json.loads(data.decode())
+        self.player_num = json_data["player_num"]
+        print("You are player %d" %self.player_num)
+        print("You will have the symbol %s" %('X' if self.player_num == 1 else 'O'))
+
     def take_turn(self):
         turn_bytes = self.socket.recv(4096)
         if not turn_bytes:
@@ -77,23 +112,8 @@ class Game:
             self.game_over = True
             self.won = True if board_data["won"] else False
 
-    def print_board(self):
-        os.system("cls" if os.name == "nt" else "clear")
-        print("---------------")
-        for row in self.board:
-            print('|', end="")
-            for col in row:
-                print(col, end="|")
-            
-            print("\n---------------")
-
-    def end_game(self):
-        if self.won:
-            print("Congratulations! You won!")
-        else:
-            print("You lose. Better luck next time.")
-
     def play_game(self):
+        print("Connected to server. Waiting for another player to join...")
         self.get_player_num()
         self.print_board()
         while True:
@@ -104,3 +124,8 @@ class Game:
             if self.game_over:
                 self.end_game()
                 return
+            
+class LocalGame(Game):
+
+    def __init__(self):
+        super().__init__()

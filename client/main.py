@@ -1,6 +1,6 @@
 import socket
 
-from game import Game
+from game import OnlineGame, LocalGame
 
 class ConnectionError(Exception):
     """Raised when client gets disconnected from the server"""
@@ -14,7 +14,10 @@ class Client:
         self.socket = None
         self.online = None
         self.difficulty = None
-        self.game = Game()
+        self.game = None
+
+    def get_online(self):
+        return self.online
 
     def set_opponent(self):
         user_input = input("Would you like to play online or against an AI? (o for online, a for AI): ")
@@ -22,6 +25,7 @@ class Client:
             print("Sorry that response was invalid.")
             user_input = input("Would you like to play online or against an AI? (o for online, a for AI): ")
         self.online = True if user_input == 'o' or user_input == 'O' else False
+        self.game = OnlineGame() if self.online else LocalGame()
         if not self.online:
             user_input = input("What difficulty do you want to play against? (1 for easy, 2 for medium, 3 for hard, 4 for expert): ")
             while not self.validate_difficulty(user_input):
@@ -58,7 +62,10 @@ class Client:
 if __name__ == "__main__":
     client = Client()
     client.set_opponent()
-    client.connect_to_server()
-    client.start_game()
-    client.handle_disconnection()
+    if client.get_online():
+        client.connect_to_server()
+        client.start_game()
+        client.handle_disconnection()
+    else:
+        client.start_game()
         
