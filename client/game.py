@@ -1,4 +1,5 @@
 import json
+import os
 
 class ConnectionError(Exception):
     """Raised when client gets disconnected from the server"""
@@ -77,6 +78,7 @@ class Game:
             self.won = True if board_data["won"] else False
 
     def print_board(self):
+        os.system("cls" if os.name == "nt" else "clear")
         print("---------------")
         for row in self.board:
             print('|', end="")
