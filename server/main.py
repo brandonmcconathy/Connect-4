@@ -3,24 +3,14 @@ import os
 import signal
 
 from game import Game
+from room import Room, SinglePlayerRoom
+from connectionerror import ConnectionError
 
 class Player:
 
     def __init__(self, socket):
         self.socket = socket
         self.symbol = ''
-
-
-class Room:
-
-    def __init__(self):
-        self.players = []
-
-    def get_num_players(self):
-        return len(self.players)
-    
-    def add_player(self, player):
-        self.players.append(player)
 
 
 class Server:
@@ -42,11 +32,33 @@ class Server:
     def accept_new_connection(self):
         connection, address = self.socket.accept()
         print("New connection: ", address)
-        self.put_new_connection_in_room(connection)
 
-    def put_new_connection_in_room(self, new_socket):
+        # Gets if the player wants to play against another player or ai
+        opponent_bytes = connection.recv(4096)
+        if not opponent_bytes:
+            # Connection closed
+            raise ConnectionError
+        
+        play_player = opponent_bytes["play_player"]
+        difficulty = opponent_bytes["difficulty"]
+        self.put_new_connection_in_room(connection, play_player, difficulty)
+
+    def put_new_connection_in_room(self, new_socket, play_player, difficulty):
         # Make new player
         player = Player(new_socket)
+
+        if not play_player:
+            new_room = SinglePlayerRoom(player)
+
+            # Start room process
+            newpid = os.fork()
+            if newpid == 0:
+                # Move process to game loop
+                new_game = Game(new_room)
+                new_game.start_game()   # Room process will exit and never return here
+            
+            print("Starting new singleplayer room process with pid: ", newpid)
+            return
 
         # Add player to empty room
         if self.curr_room.get_num_players() == 0:
@@ -86,4 +98,7 @@ if __name__ == "__main__":
     server = Server()
     server.start_server()
     while True:
-        server.accept_new_connection()
+        try:
+            server.accept_new_connection()
+        except ConnectionError:
+            pass

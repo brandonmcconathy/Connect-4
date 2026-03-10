@@ -3,9 +3,7 @@ import random
 import socket
 import os
 
-class ConnectionError(Exception):
-    """Raised when client gets disconnected from the server"""
-    pass
+from connectionerror import ConnectionError
 
 class Game:
 
