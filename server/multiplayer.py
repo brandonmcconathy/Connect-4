@@ -11,15 +11,6 @@ class Multiplayer(Game):
         super().__init__(room)
 
     def take_turn(self):
-        # Send message to players to tell them if it is their turn
-        active_player_data = json.dumps({"is_active": True, "board": self.board}).encode()
-        non_active_player_data = json.dumps({"is_active": False, "board": self.board}).encode()
-        try:
-            self.room.active_player.socket.send(active_player_data)
-            self.room.non_active_player.socket.send(non_active_player_data)
-        except BrokenPipeError:
-            raise ConnectionError
-
         # Wait for acitve player to take turn
         turn_bytes = self.room.active_player.socket.recv(4096)
         if not turn_bytes:
@@ -70,4 +61,3 @@ class Multiplayer(Game):
         
         print("Room Process: Room exiting")
         os._exit(0)
-

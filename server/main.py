@@ -51,7 +51,7 @@ class Server:
         player = Player(new_socket)
 
         if not play_player:
-            new_room = SinglePlayerRoom(player)
+            new_room = SinglePlayerRoom(player, difficulty)
 
             # Start room process
             newpid = os.fork()
@@ -79,7 +79,7 @@ class Server:
                 new_game = Multiplayer(self.curr_room)
                 new_game.start_game()   # Room process will exit and never return here
 
-            print("Starting new room process with pid: ", newpid)
+            print("Starting new multiplayer room process with pid: ", newpid)
             return
         
         # curr_room is full. Add player to new room

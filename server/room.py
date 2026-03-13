@@ -14,8 +14,9 @@ class Room:
 
 class SinglePlayerRoom():
 
-    def __init__(self, player=None):
+    def __init__(self, player, difficulty):
         self.player = player
+        self.difficulty = difficulty
 
     def add_player(self, player):
         self.player = player
@@ -74,11 +75,11 @@ class MultiPlayerRoom():
         self.non_active_player = self.player2
 
         # Send player 1 their player number
-        player1_data = json.dumps({"player_num": 1}).encode()
+        player1_data = json.dumps({"player_num": 1, "is_active": True}).encode()
         self.player1.socket.send(player1_data)
 
         # Send player 2 their player number
-        player2_data = json.dumps({"player_num": 2}).encode()
+        player2_data = json.dumps({"player_num": 2, "is_active": False}).encode()
         self.player2.socket.send(player2_data)
 
     def update_active_player(self):
