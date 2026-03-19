@@ -5,29 +5,6 @@ class Room:
 
     def __init__(self):
         self.players = []
-
-    def get_num_players(self):
-        return len(self.players)
-    
-    def add_player(self, player):
-        self.players.append(player)
-
-class SinglePlayerRoom():
-
-    def __init__(self, player, difficulty):
-        self.player = player
-        self.difficulty = difficulty
-
-    def add_player(self, player):
-        self.player = player
-
-    def get_difficulty(self):
-        return self.difficulty
-
-class MultiPlayerRoom():
-
-    def __init__(self):
-        self.players = []
         self.player1 = None
         self.player2 = None
         self.active_player = None
@@ -89,4 +66,3 @@ class MultiPlayerRoom():
         temp = self.active_player
         self.active_player = self.non_active_player
         self.non_active_player = temp
-

@@ -3,9 +3,8 @@ import os
 import signal
 import json
 
-from multiplayer import Multiplayer
-from singleplayer import Singleplayer
-from room import MultiPlayerRoom, SinglePlayerRoom
+from game import Game
+from room import Room
 from connectionerror import ConnectionError
 
 class Player:
@@ -20,7 +19,7 @@ class Server:
     def __init__(self):
         self.port = 50000       # Random port
         self.socket = None
-        self.curr_room = MultiPlayerRoom()
+        self.curr_room = Room()
 
     def start_server(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -34,34 +33,12 @@ class Server:
     def accept_new_connection(self):
         connection, address = self.socket.accept()
         print("New connection: ", address)
-
-        # Gets if the player wants to play against another player or ai
-        opponent_bytes = connection.recv(4096)
-        if not opponent_bytes:
-            # Connection closed
-            raise ConnectionError
-        opponent_data = json.loads(opponent_bytes.decode())
         
-        play_player = opponent_data["play_player"]
-        difficulty = opponent_data["difficulty"]
-        self.put_new_connection_in_room(connection, play_player, difficulty)
+        self.put_new_connection_in_room(connection)
 
-    def put_new_connection_in_room(self, new_socket, play_player, difficulty):
+    def put_new_connection_in_room(self, new_socket):
         # Make new player
         player = Player(new_socket)
-
-        if not play_player:
-            new_room = SinglePlayerRoom(player, difficulty)
-
-            # Start room process
-            newpid = os.fork()
-            if newpid == 0:
-                # Move process to game loop
-                new_game = Singleplayer(new_room)
-                new_game.start_game()   # Room process will exit and never return here
-            
-            print("Starting new singleplayer room process with pid: ", newpid)
-            return
 
         # Add player to empty room
         if self.curr_room.get_num_players() == 0:
@@ -70,20 +47,24 @@ class Server:
 
         # Add player to room with player in it already
         if self.curr_room.get_num_players() == 1:
+
+            # Make sure curr player in room is still active
+
+            # Add new player to room
             self.curr_room.add_player(player)
             
             # Start room process
             newpid = os.fork()
             if newpid == 0:
                 # Move process to game loop
-                new_game = Multiplayer(self.curr_room)
+                new_game = Game(self.curr_room)
                 new_game.start_game()   # Room process will exit and never return here
 
             print("Starting new multiplayer room process with pid: ", newpid)
             return
         
         # curr_room is full. Add player to new room
-        new_room = MultiPlayerRoom()
+        new_room = Room()
         new_room.add_player(player)
         self.curr_room = new_room
 
