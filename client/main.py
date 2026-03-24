@@ -21,6 +21,22 @@ class Client:
         self.game = Game()
         self.game.set_socket(self.socket)
 
+    def keep_alive(self):
+        print("Connected to server. Waiting for another player to join...")
+        data = self.socket.recv(4096)
+        if not data:
+            # Connection closed
+            raise ConnectionError
+        keep_alive_data = json.loads(data.decode())
+        if not keep_alive_data["send-keep-alive"]:
+            raise ConnectionError
+
+        try:
+            message_data = json.dumps({"keep-alive": True}).encode()
+            self.socket.send(message_data)
+        except BrokenPipeError:
+            raise ConnectionError
+
     def start_game(self):
         self.game.play_game()
 
@@ -31,6 +47,10 @@ class Client:
 if __name__ == "__main__":
     client = Client()
     client.connect_to_server()
+    try:
+        client.keep_alive()
+    except ConnectionError:
+        client.handle_disconnection()
     client.start_game()
     client.handle_disconnection()
         

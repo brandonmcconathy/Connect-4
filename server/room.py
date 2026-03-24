@@ -40,6 +40,9 @@ class Room:
     def add_player(self, player):
         self.players.append(player)
 
+    def get_pending_player(self):
+        return self.players[0]
+
     def assign_players(self):
         # Randomly assign players a player number
         first_player = random.randint(0, 1)

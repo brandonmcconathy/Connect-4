@@ -96,7 +96,6 @@ class Game():
             print("You lose. Better luck next time.")
 
     def play_game(self):
-        print("Connected to server. Waiting for another player to join...")
         self.get_player_num()
         self.print_board()
         while True:

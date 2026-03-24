@@ -33,8 +33,11 @@ class Server:
     def accept_new_connection(self):
         connection, address = self.socket.accept()
         print("New connection: ", address)
-        
-        self.put_new_connection_in_room(connection)
+        try:
+            self.put_new_connection_in_room(connection)
+        except ConnectionError:
+            self.curr_room = Room()
+            self.put_new_connection_in_room(connection)
 
     def put_new_connection_in_room(self, new_socket):
         # Make new player
@@ -49,6 +52,33 @@ class Server:
         if self.curr_room.get_num_players() == 1:
 
             # Make sure curr player in room is still active
+            pending_player = self.curr_room.get_pending_player()
+            try:
+                message_data = json.dumps({"send-keep-alive": True}).encode()
+                pending_player.socket.send(message_data)
+            except BrokenPipeError:
+                raise ConnectionError
+            keep_alive_bytes = pending_player.socket.recv(4096)
+            if not keep_alive_bytes:
+                # Connection closed
+                raise ConnectionError
+            keep_alive_data = json.loads(keep_alive_bytes.decode())
+            if not keep_alive_data["keep-alive"]:
+                raise ConnectionError
+            
+            # Make sure new player in room is still active
+            try:
+                message_data = json.dumps({"send-keep-alive": True}).encode()
+                new_socket.send(message_data)
+            except BrokenPipeError:
+                raise ConnectionError
+            keep_alive_bytes = new_socket.recv(4096)
+            if not keep_alive_bytes:
+                # Connection closed
+                raise ConnectionError
+            keep_alive_data = json.loads(keep_alive_bytes.decode())
+            if not keep_alive_data["keep-alive"]:
+                raise ConnectionError
 
             # Add new player to room
             self.curr_room.add_player(player)
