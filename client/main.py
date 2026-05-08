@@ -10,7 +10,7 @@ class ConnectionError(Exception):
 class Client:
 
     def __init__(self):
-        self.server_host = "localhost"
+        self.server_host = "bmcconathy.com"
         self.server_port = 50000
         self.socket = None
         self.game = None
